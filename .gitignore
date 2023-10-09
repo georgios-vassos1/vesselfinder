@@ -1,0 +1,7 @@
+data/
+
+.env
+.ipynb_checkpoints
+notebooks/.ipynb_checkpoints
+.ropeproject
+
