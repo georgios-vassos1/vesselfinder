@@ -12,6 +12,7 @@ def get_static_content(base_url: str, headers: dict):
   parsed_html.find_all("table", class_=['aparams','tparams'])
  )
 
+
 def scrape_static_table(titles: bs4.element.ResultSet, tables: bs4.element.ResultSet, idx:list = [0,3,3]) -> dict:
 
  D = {}
@@ -27,3 +28,23 @@ def scrape_static_table(titles: bs4.element.ResultSet, tables: bs4.element.Resul
    D[tbx][key] = value
 
  return D
+
+
+def get_vesselfinder_static(IMOs: list, headers: dict=None, limit: int=10) -> dict:
+
+ vf_details = {}
+ exceptions = {}
+
+ for j, IMO in enumerate(IMOs[:limit]):
+  base_url = f"https://www.vesselfinder.com/en/vessels/details/{IMO}"
+
+  try:
+   static_content = get_static_content(base_url, headers)
+   vf_details[IMO] = scrape_static_table(*static_content)
+  except Exception as e:
+   print(f"An exception occurred for {IMO}: {e}")
+   exceptions[IMO] = e
+
+  print(f"{j+1} Vessels Completed", end='\r', flush=True)
+
+ return vf_details, exceptions
