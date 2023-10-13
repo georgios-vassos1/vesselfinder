@@ -1,3 +1,7 @@
+import urllib.request
+from bs4 import BeautifulSoup
+
+
 def get_static_content(base_url: str, headers: dict):
 
  req = urllib.request.Request(base_url, None, headers)
