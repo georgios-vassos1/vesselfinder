@@ -52,4 +52,4 @@ def get_AIS_XHR(XHRs: list) -> list:
 
 
 if __name__ == '__main__':
-    asyncio.run(client())
+ asyncio.run(client())
