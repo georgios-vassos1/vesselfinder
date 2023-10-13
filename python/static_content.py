@@ -1,8 +1,10 @@
 import urllib.request
+import bs4
+
 from bs4 import BeautifulSoup
 
 
-def get_static_content(base_url: str, headers: dict):
+def get_static_content(headers: dict, base_url: str, elements: dict) -> tuple:
 
  req = urllib.request.Request(base_url, None, headers)
 
@@ -11,16 +13,14 @@ def get_static_content(base_url: str, headers: dict):
 
  parsed_html = BeautifulSoup(page_content, 'html.parser')
 
- return (
-  parsed_html.find_all("h2", class_=['bar']),
-  parsed_html.find_all("table", class_=['aparams','tparams'])
- )
+ return tuple(parsed_html.find_all(name=k, class_=v) for k, v in elements.items())
 
 
-def scrape_static_table(titles: bs4.element.ResultSet, tables: bs4.element.ResultSet, idx:list = [0,3,3]) -> dict:
+def scrape_vesselfinder_details(titles: bs4.element.ResultSet, tables: bs4.element.ResultSet) -> dict:
+
+ idx = [0,3,3]
 
  D = {}
-
  for j, table in enumerate(tables[:3]):
   tbx = titles[idx[j]].text.strip()
   D[tbx] = {}
@@ -36,6 +36,8 @@ def scrape_static_table(titles: bs4.element.ResultSet, tables: bs4.element.Resul
 
 def get_vesselfinder_static(IMOs: list, headers: dict=None, limit: int=10) -> dict:
 
+ elements = {'h2': 'bar', 'table': ['aparams','tparams']}
+
  vf_details = {}
  exceptions = {}
 
@@ -43,8 +45,8 @@ def get_vesselfinder_static(IMOs: list, headers: dict=None, limit: int=10) -> di
   base_url = f"https://www.vesselfinder.com/en/vessels/details/{IMO}"
 
   try:
-   static_content = get_static_content(base_url, headers)
-   vf_details[IMO] = scrape_static_table(*static_content)
+   static_content  = get_static_content(headers, base_url, elements)
+   vf_details[IMO] = scrape_vesselfinder_details(*static_content)
   except Exception as e:
    print(f"An exception occurred for {IMO}: {e}")
    exceptions[IMO] = e
@@ -52,3 +54,32 @@ def get_vesselfinder_static(IMOs: list, headers: dict=None, limit: int=10) -> di
   print(f"{j+1} Vessels Completed", end='\r', flush=True)
 
  return vf_details, exceptions
+
+
+if __name__ == '__main__':
+ import os
+ import pandas as pd
+
+ headers = {
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) \
+                 Chrome/91.0.4472.124 \
+                 Safari/537.11',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+  'Accept-Encoding': 'none',
+  'Accept-Language': 'en-US,en;q=0.8',
+  'Connection': 'keep-alive'
+ }
+
+ data_path = os.path.join(os.getcwd(), "..", "data", "imo-vessel-codes.csv")
+ if os.path.exists(data_path):
+  # Read the CSV file into a DataFrame
+  df = pd.read_csv(data_path)
+ else:
+  print(f"The CSV file '{data_path}' does not exist.")
+
+ IMOs = list(df.imo.unique())
+
+ vf_details, _ = get_vesselfinder_static(IMOs[:2], headers)
+ print(vf_details)
+
