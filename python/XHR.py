@@ -1,6 +1,10 @@
 import asyncio
-from playwright.async_api import async_playwright
+import aiohttp
 import re
+
+from playwright.async_api import async_playwright
+from playwright.async_api._generated import Request as HTTPRequest
+from typing import List
 
 
 async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetraffic.com/en/ais') -> list:
@@ -27,29 +31,62 @@ async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetra
   return xhr_requests
 
 
-async def client(brw: str = 'chromium'):
- if brw == 'firefox':
-  path_to_brw = '/Applications/Firefox.app/Contents/MacOS/firefox'
- else:
-  path_to_brw = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-
- xhr_requests = await getXHR('chromium', path_to_brw)
- # Process the XHR requests here, for example, printing their URLs
- for request in xhr_requests:
-  print(request.url)
+async def is_matching_url(request, url_pattern):
+ return url_pattern.search(request.url)
 
 
-def get_AIS_XHR(XHRs: list) -> list:
+async def get_AIS_XHR(XHRs: List[HTTPRequest]) -> List[str]:
+ url_pattern = re.compile(re.escape('/get_data_json_4/z:') + r'\d+/X:' + r'\d+/Y:' + r'\d+/station:0')
 
- url_pattern = re.compile(re.escape('/get_data_json_4/z:2/X:') + r'\d+/Y:' + r'\d+/station:0')
+ tasks = [is_matching_url(request, url_pattern) for request in XHRs]
+ matching_results = await asyncio.gather(*tasks)
 
- ais = []
- for request in XHRs:
-  if url_pattern.search(request.url):
-   ais.append(request.url)
+ ais_xhr = [request.url for request, is_matching in zip(XHRs, matching_results) if is_matching]
 
- return ais
+ return ais_xhr
+
+
+async def fetch_data(session: aiohttp.ClientSession, url: str, headers: dict = None) -> dict:
+ try:
+  async with session.get(url, headers=headers) as response:
+   response.raise_for_status()
+   return await response.json()
+ except Exception as e:
+  print(f"An error occurred while fetching {url}: {e}")
+  return None
+
+
+async def get_ais_data(ais: list, headers: dict = None) -> dict:
+ async with aiohttp.ClientSession() as session:
+  ais_data = await asyncio.gather(*(fetch_data(session, url, headers) for url in ais))
+ return ais_data
+ # while True:
+ #  ais_data = await asyncio.gather(*(fetch_data(session, url, headers) for url in ais))
+ #  # Process the ais_data as needed
+ #  await asyncio.sleep(300)  # Sleep for 5 minutes (300 seconds)
+
+
+async def client():
+ headers = {
+  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) \
+                 Chrome/91.0.4472.124 \
+                 Safari/537.11',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+  'Accept-Encoding': 'none',
+  'Accept-Language': 'en-US,en;q=0.8',
+  'Connection': 'keep-alive'
+ }
+ xhr_requests = await getXHR('chromium', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+ ais = await get_AIS_XHR(xhr_requests)
+ ais_data = await get_ais_data(ais[:2], headers)
+ return ais_data
 
 
 if __name__ == '__main__':
- asyncio.run(client())
+ ais_data = asyncio.run(client())
+ # print(ais_data)
+ # loop = asyncio.get_event_loop()
+ # loop.run_until_complete(client())
+
+
