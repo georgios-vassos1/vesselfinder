@@ -1,8 +1,9 @@
 import asyncio
 from playwright.async_api import async_playwright
+import re
 
 
-async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetraffic.com/en/ais'):
+async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetraffic.com/en/ais') -> list:
 
  async with async_playwright() as p:
   browser = await p[brw_name].launch(executable_path=brw_path)
@@ -36,6 +37,18 @@ async def client(brw: str = 'chromium'):
  # Process the XHR requests here, for example, printing their URLs
  for request in xhr_requests:
   print(request.url)
+
+
+def get_AIS_XHR(XHRs: list) -> list:
+
+ url_pattern = re.compile(re.escape('/get_data_json_4/z:2/X:') + r'\d+/Y:' + r'\d+/station:0')
+
+ ais = []
+ for request in XHRs:
+  if url_pattern.search(request.url):
+   ais.append(request.url)
+
+ return ais
 
 
 if __name__ == '__main__':
