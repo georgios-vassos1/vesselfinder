@@ -2,9 +2,7 @@ import requests
 import json
 
 
-def scrape_dynamic_table(api_url: str, headers: dict=None, params: dict=None) -> dict:
-
- session = requests.Session()
+def scrape_dynamic_table(session: requests.sessions.Session, api_url: str, headers: dict=None, params: dict=None) -> dict:
 
  response = session.get(api_url, params=params, headers=headers)
  response.raise_for_status()
@@ -12,17 +10,16 @@ def scrape_dynamic_table(api_url: str, headers: dict=None, params: dict=None) ->
  return response.json()
 
 
-def get_vesselfinder_dynamic(MMSIs: list, headers: dict=None, limit: int=10) -> dict:
+def get_vesselfinder_dynamic(session: requests.sessions.Session, MMSIs: list, headers: dict=None) -> dict:
 
  vf_details = {}
  exceptions = {}
 
- for j, MMSI in enumerate(MMSIs[:limit]):
-
+ for j, MMSI in enumerate(MMSIs):
   api_url = f"https://www.vesselfinder.com/api/pub/pcext/v4/{MMSI}?d"
 
   try:
-   dynamic_content = scrape_dynamic_table(api_url, headers)
+   dynamic_content = scrape_dynamic_table(session, api_url, headers)
   except Exception as e:
    print(f"An exception occurred for {MMSI}: {e}")
    exceptions[MMSI] = e
@@ -44,6 +41,8 @@ if __name__ == '__main__':
   'Accept-Language': 'en-US,en;q=0.8',
   'Connection': 'keep-alive'
  }
+ session = requests.Session()
 
- MMSI = 228386800
- print(get_vesselfinder_dynamic([MMSI], headers))
+ MMSIs = [228386800]
+ print(get_vesselfinder_dynamic(session, MMSIs, headers))
+
