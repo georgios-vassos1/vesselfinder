@@ -1,56 +1,50 @@
-import urllib.request
 import bs4
 
 from bs4 import BeautifulSoup
+from urllib.request import Request, urlopen
+from typing import List, Tuple, Dict
 
 
-def get_static_content(headers: dict, base_url: str, elements: dict) -> tuple:
+def get_static_content(base_url: str, headers: dict, elements: dict) -> Tuple[List[bs4.element.Tag], bs4.BeautifulSoup]:
+ try:
+  req = Request(base_url, None, headers)
+  with urlopen(req) as response:
+   page_content = response.read()
+  parsed_html = BeautifulSoup(page_content, 'html.parser')
+  found_elements = tuple(parsed_html.find_all(name=k, class_=v) for k, v in elements.items())
+  return found_elements, parsed_html
+ except Exception as e:
+  # Add appropriate error handling here, e.g., log the error
+  return tuple(), None
 
- req = urllib.request.Request(base_url, None, headers)
 
- with urllib.request.urlopen(req) as response:
-  page_content = response.read()
-
- parsed_html = BeautifulSoup(page_content, 'html.parser')
-
- return tuple(parsed_html.find_all(name=k, class_=v) for k, v in elements.items())
-
-
-def scrape_vesselfinder_details(titles: bs4.element.ResultSet, tables: bs4.element.ResultSet) -> dict:
-
+def scrape_vesselfinder_details(titles: bs4.element.ResultSet, tables: bs4.element.ResultSet) -> Dict[str, Dict[str, any]]:
  idx = [0,3,3]
-
  D = {}
  for j, table in enumerate(tables[:3]):
   tbx = titles[idx[j]].text.strip()
   D[tbx] = {}
-
   for row in table.find_all('tr'):
    columns = row.find_all('td')
    key   = columns[0].text.strip()
    value = columns[1].text.strip()
    D[tbx][key] = value
-
  return D
 
 
-def get_vesselfinder_static(IMOs: list, headers: dict=None, limit: int=10) -> dict:
-
+def get_vesselfinder_static(IMOs: list, headers: dict=None) -> Tuple[Dict[int, Dict[str, Dict[str, str]]], Dict[int, str]]:
  elements = {'h2': 'bar', 'table': ['aparams','tparams']}
-
  vf_details = {}
  exceptions = {}
 
- for j, IMO in enumerate(IMOs[:limit]):
+ for j, IMO in enumerate(IMOs):
   base_url = f"https://www.vesselfinder.com/en/vessels/details/{IMO}"
-
   try:
-   static_content  = get_static_content(headers, base_url, elements)
+   static_content, _  = get_static_content(base_url, headers, elements)
    vf_details[IMO] = scrape_vesselfinder_details(*static_content)
   except Exception as e:
    print(f"An exception occurred for {IMO}: {e}")
    exceptions[IMO] = e
-
   print(f"{j+1} Vessels Completed", end='\r', flush=True)
 
  return vf_details, exceptions
