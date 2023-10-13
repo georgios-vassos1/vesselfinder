@@ -4,6 +4,8 @@ import json
 
 def scrape_dynamic_table(api_url: str, headers: dict=None, params: dict=None) -> dict:
 
+ session = requests.Session()
+
  response = session.get(api_url, params=params, headers=headers)
  response.raise_for_status()
 
