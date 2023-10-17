@@ -1,5 +1,7 @@
 .env
 .ipynb_checkpoints
+.DS_Store
 notebooks/.ipynb_checkpoints
 .ropeproject
-
+toy/
+exx.sh
