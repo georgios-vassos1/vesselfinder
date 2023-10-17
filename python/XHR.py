@@ -7,7 +7,7 @@ from playwright.async_api._generated import Request as HTTPRequest
 from typing import List
 
 
-async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetraffic.com/en/ais') -> list:
+async def getXHR(brw_name: str, brw_path: str, url: str = 'https://www.marinetraffic.com/en/ais/home/centerx:22.1/centery:10.0/zoom:2') -> list:
 
  async with async_playwright() as p:
   browser = await p[brw_name].launch(executable_path=brw_path)
