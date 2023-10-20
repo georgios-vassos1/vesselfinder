@@ -17,7 +17,7 @@ if __name__ == '__main__':
  timestamp = datetime.now().strftime("%Y.%m.%d-%H.%M")
  # Define the path to the CSV file with the timestamp
  json_file_path = f"/app/data/mtraf_{timestamp}.json"
- # json_file_path = f"/Users/gva/vessel_track/data/mtraf_{timestamp}.json"
+ # json_file_path = f"~/vessel_track/data/mtraf_{timestamp}.json"
  # Save the JSON data to a file
  with open(json_file_path, "w") as json_file:
   json_file.write(json_data)
