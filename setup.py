@@ -1,13 +1,27 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 from os import path
+
+import os
+
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+# stackoverflow.com/a/3780822
+class CleanCommand(Command):
+    """Custom clean command to tidy up the project root."""
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        os.system('rm -vrf ./build ./dist ./*.pyc ./*.tgz ./*.egg-info')
+
+# with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+#     long_description = f.read()
 
 setup(
-    name="vessel_tracking",
+    name="vessel-tracker",
     version="0.0.0",
     description="A collection of python modules for scraping data from vesselfinder.com.",
     author="George Vassos",
@@ -26,9 +40,20 @@ setup(
             'Programming Language :: Python :: 3.10',
             'Programming Language :: Python :: 3 :: Only',
         ],
-    packages=find_packages(where='sourcing'),
+    packages=find_packages(where='vessel_tracker'),
     python_requires='>=3.9',
+    install_requires=[
+        'urllib3==1.26.7',
+        'beautifulsoup4==4.10.0',
+        'pandas==1.3.3',
+        'requests==2.26.0',
+        'playwright==1.15.3',
+        'httpx==0.19.0',
+        'aiohttp==3.7.4'
+    ],
+    cmdclass={
+        'clean': CleanCommand,
+    },
     tests_require=['pytest'],
+    license='MIT',
 )
-
-
