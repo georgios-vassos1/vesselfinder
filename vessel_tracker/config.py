@@ -1,4 +1,5 @@
-headers = {
+
+headers_ = {
  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) \
                 Chrome/91.0.4472.124 \
                 Safari/537.11',
@@ -8,3 +9,9 @@ headers = {
  'Accept-Language': 'en-US,en;q=0.8',
  'Connection': 'keep-alive'
 }
+
+chrome_ = {
+ 'MacOS':  ('chromium','/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+ 'Linux': ('chromium', '/usr/bin/chromium')
+}
+
