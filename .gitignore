@@ -1,9 +1,9 @@
 .env
 .ipynb_checkpoints
 .DS_Store
-notebooks/.ipynb_checkpoints
 .ropeproject
-toy/
+notebooks/.ipynb_checkpoints
 *.egg-info/
+toy/
 vessel_tracker/__pycache__/
 data/mtraf_*
