@@ -7,7 +7,7 @@ ENV TZ=Europe/Madrid
 # Update pip
 RUN apt-get update && apt-get install -y chromium &&\
     pip install --no-cache-dir --upgrade pip &&\
-    pip --no-cache-dir install build installer
+    pip install --no-cache-dir build installer
 
 # Set the working directory to /app
 WORKDIR /app
