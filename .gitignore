@@ -5,4 +5,4 @@ notebooks/.ipynb_checkpoints
 .ropeproject
 toy/
 *.egg-info/
-python/__pycache__/
+vessel_tracker/__pycache__/
