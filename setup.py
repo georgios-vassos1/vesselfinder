@@ -43,13 +43,14 @@ setup(
     packages=find_packages(where='vessel_tracker'),
     python_requires='>=3.9',
     install_requires=[
-        'urllib3==1.26.7',
-        'beautifulsoup4==4.10.0',
-        'pandas==1.3.3',
-        'requests==2.26.0',
+        'numpy==1.26.1',
+        'pandas==2.1.1',
         'playwright==1.15.3',
         'httpx==0.19.0',
-        'aiohttp==3.7.4'
+        'aiohttp==3.7.4',
+        'requests==2.26.0',
+        'urllib3==1.26.7',
+        'beautifulsoup4==4.10.0',
     ],
     cmdclass={
         'clean': CleanCommand,
