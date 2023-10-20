@@ -6,3 +6,4 @@ notebooks/.ipynb_checkpoints
 toy/
 *.egg-info/
 vessel_tracker/__pycache__/
+data/mtraf_*
