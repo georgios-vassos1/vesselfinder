@@ -23,7 +23,7 @@ get_assets <- function(ref_url, ...) {
   if (httr::status_code(post_) == 200L) {
     # Extract cookies
     cookies <- httr::cookies(post_) |>
-      dplyr::select(name, value) |>
+      # dplyr::select(name, value) |>
       (\(x) { setNames(as.list(x$value), x$name) })()
 
     # Extract specific cookies
@@ -71,15 +71,15 @@ scrape_data <- function(base_url, params, headers, ...) {
 
   # Make the HTTP request
   response <- httr::GET(url, httr::add_headers(headers))
-  
+
   # Check if the request was successful (status code 200)
   if (httr::status_code(response) == 200L) {
     # Parse the JSON content of the response
     result <- httr::content(response, "parsed")
   } else {
-    cat("Request failed with status code", status_code(response), "\n")
+    cat("Request failed with status code", httr::status_code(response), "\n")
     cat("Response content:\n")
-    cat(content(response, "text"), "\n")
+    cat(httr::content(response, "text"), "\n")
   }
 
   result
