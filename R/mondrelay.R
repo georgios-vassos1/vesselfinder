@@ -75,14 +75,12 @@ scrape_data <- function(base_url, params, headers, ...) {
   # Check if the request was successful (status code 200)
   if (httr::status_code(response) == 200L) {
     # Parse the JSON content of the response
-    result <- httr::content(response, "parsed")
+    return(httr::content(response, "parsed"))
   } else {
     cat("Request failed with status code", httr::status_code(response), "\n")
     cat("Response content:\n")
     cat(httr::content(response, "text"), "\n")
   }
-
-  result
 }
 
 conv2dt_ <- function(item) {
