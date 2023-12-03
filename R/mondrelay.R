@@ -7,8 +7,8 @@ consrtuct_query <- function(params) {
   paste0(names(params), "=", params, collapse = "&")
 }
 
-consrtuct_cookie_header <- function(cookie) {
-  if (!is.null(cookie)) paste0(names(cookie), "=", cookie, collapse = "; ")
+consrtuct_cookie_header <- function(cookies) {
+  if (!is.null(cookies)) paste0(names(cookies), "=", cookies, collapse = "; ")
 }
 
 get_url <- function(base_url, params) {
