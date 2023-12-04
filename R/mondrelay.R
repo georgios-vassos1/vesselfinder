@@ -42,7 +42,7 @@ get_verification_token <- function(ref_url, ...) {
 
     # Extract the __RequestVerificationToken using regular expressions
     pattern <- 'token="([^"]+)"'
-    token <- stringr::str_match(httr::content(get_, "text"), pattern)[,2L]
+    token   <- stringr::str_match(httr::content(get_, "text"), pattern)[,2L]
 
     return(token)
   }
