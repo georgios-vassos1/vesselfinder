@@ -25,7 +25,6 @@ setup(
     version="0.0.0",
     description="A collection of python modules for scraping data from vesselfinder.com.",
     author="George Vassos",
-    author_email="georgios.vassos1@maersk.com",
     classifiers=[
             'Development Status :: 3 - Alpha',
             # Indicate who your project is intended for
