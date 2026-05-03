@@ -25,7 +25,7 @@ install:
 	uv sync --extra dev
 
 lint:
-	uv run ruff check vessel_tracker/ tests/ scripts/
+	uv run ruff check src/ tests/ scripts/
 
 test:
 	uv run pytest tests/

@@ -15,7 +15,7 @@ WORKDIR /app
 RUN mkdir -p /app/data
 
 COPY pyproject.toml README.md License.txt ./
-COPY vessel_tracker ./vessel_tracker/
+COPY src ./src/
 
 RUN uv pip install --system .
 

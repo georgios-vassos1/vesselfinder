@@ -29,7 +29,7 @@ dev = [
 vessel-tracker = "vessel_tracker.runner:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["vessel_tracker"]
+packages = ["src/vessel_tracker"]
 
 [tool.ruff]
 line-length = 120
