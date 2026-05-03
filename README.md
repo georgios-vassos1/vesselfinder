@@ -7,7 +7,7 @@ Each run fetches ~32,000 unique vessels across 208 world tiles (zoom level 4, Ar
 ## How it works
 
 1. **Session** — Playwright launches Chrome with stealth patches to pass Cloudflare, then extracts session cookies and the tile URL template from intercepted XHR requests.
-2. **Tile fetch** — Direct `aiohttp` requests are made to all 208 maritime tiles at zoom:4 using the session cookies, with a concurrency limit of 5 to avoid rate limiting.
+2. **Tile fetch** — Direct `curl_cffi` requests (impersonating Chrome's TLS fingerprint) are made to all 208 maritime tiles at zoom:4 using the session cookies, with a concurrency limit of 5 to avoid rate limiting.
 3. **Normalise** — Raw API fields are cast to typed values (`SPEED` from tenths-of-knot to knots, `LAT`/`LON` to float, etc.) and a `captured_at` UTC timestamp is attached.
 4. **Store** — Normalised records are bulk-inserted into the `vessel_positions` hypertable in TimescaleDB.
 
