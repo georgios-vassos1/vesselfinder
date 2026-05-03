@@ -1,24 +1,32 @@
-.PHONY: build run remove_containers remove_images install lint test clean-cache up down
+.PHONY: up down logs status build rebuild clean clean-all install lint test
 
-# --- Docker Compose (TimescaleDB + scraper) ---
+# --- Docker Compose ---
 up:
-	docker compose up -d
+	docker-compose up -d
 
 down:
-	docker compose down
+	docker-compose down
 
-# --- Legacy single-container Podman targets ---
+logs:
+	docker-compose logs -f scraper
+
+status:
+	docker-compose ps
+
 build:
-	podman build -t marinetraffic .
+	docker-compose build scraper
 
-run:
-	podman run -v ./data:/app/data --rm marinetraffic
+rebuild:
+	docker-compose build --no-cache scraper
 
-remove_containers:
-	podman container ls -a | awk 'NR>1 { print $1 }' | xargs podman rm
+clean:
+	docker-compose down -v
+	docker image prune -f
 
-remove_images:
-	podman images | awk 'NR>1 { print $3 }' | xargs podman rmi
+clean-all:
+	docker-compose down -v
+	docker rmi vessel_track-scraper timescale/timescaledb:latest-pg16 python:3.12-slim-bookworm 2>/dev/null || true
+	docker image prune -f
 
 # --- Development ---
 install:
