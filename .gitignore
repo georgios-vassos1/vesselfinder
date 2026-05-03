@@ -1,9 +1,39 @@
+# Environment
 .env
-.ipynb_checkpoints
-.DS_Store
-.ropeproject
-notebooks/.ipynb_checkpoints
+cookies.json
+
+# Python cache & build
+__pycache__/
+*.py[cod]
+*.pyo
 *.egg-info/
-toy/
-vessel_tracker/__pycache__/
+*.egg
+dist/
+build/
+
+# uv / virtualenv
+.venv/
+
+# Test & lint caches
+.pytest_cache/
+.ruff_cache/
+tests/pytest.log
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Editor
+.ropeproject
+.idea/
+.vscode/
+
+# Docker
+docker-compose.override.yml
+
+# Data snapshots
 data/mtraf_*
+data/vessels_*

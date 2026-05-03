@@ -1,36 +1,23 @@
-# Use a lightweight Linux distribution as a parent image
-FROM python:3.12.0-bookworm
+FROM python:3.12-slim-bookworm
 
-# Set the timezone to Spain (CET)
-ENV TZ=Europe/Madrid
+ENV TZ=Europe/Madrid \
+    PYTHONUNBUFFERED=1 \
+    DISPLAY=:99
 
-# Update pip
-RUN apt-get update && apt-get install -y chromium &&\
-    pip install --no-cache-dir --upgrade pip &&\
-    pip install --no-cache-dir build installer
+# System deps: chromium + Xvfb (virtual display for non-headless Playwright)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        chromium \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir uv
 
-# Set the working directory to /app
 WORKDIR /app
-
-# Create the app/data directory
 RUN mkdir -p /app/data
 
-# Copy only the script and requirements file into the container
-# Copy multiple files and directories to /app/ in one line
-COPY License.txt Pipfile.txt README.md pytest.ini requirements.txt setup.cfg setup.py /app/
-COPY graber.py /app/
+COPY pyproject.toml README.md License.txt ./
+COPY vessel_tracker ./vessel_tracker/
 
-# Copy the tests directory
-COPY tests /app/tests/
+RUN uv pip install --system .
 
-# Copy the vessel_tracker directory
-COPY vessel_tracker /app/vessel_tracker/
-
-# Install any needed packages specified in requirements.txt
-RUN python -m build && pip install --no-cache-dir . && python setup.py clean
-
-# Make script executable
-# RUN chmod +x toy.py
-
-# Run script.py when the container launches
-CMD ["python", "-u", "-B", "graber.py"]
+# Start Xvfb then run the scraper loop via the installed console script
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x720x24 -nolisten tcp & sleep 1 && vessel-tracker"]
