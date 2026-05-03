@@ -71,3 +71,11 @@ def test_from_raw_missing_captured_at_defaults_to_now():
     raw = {k: v for k, v in _RAW.items() if k != "captured_at"}
     v = Vessel.from_raw(raw)
     assert v.captured_at.tzinfo is not None
+
+
+def test_from_raw_empty_strings_become_none():
+    raw = {**_RAW, "FLAG": "", "TYPE_NAME": "  ", "DESTINATION": ""}
+    v = Vessel.from_raw(raw)
+    assert v.flag is None
+    assert v.type_name is None
+    assert v.destination is None

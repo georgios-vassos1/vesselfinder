@@ -15,8 +15,7 @@ def _filter_ais_urls(requests: list) -> list[str]:
 
 async def client(
     os_name: str = "MacOS",
-    headless: bool = False,
     zoom: int = _DEFAULT_ZOOM,
 ) -> list[dict]:
-    session: Session = await establish(os_name=os_name, headless=headless)
+    session: Session = await establish(os_name=os_name)
     return await fetch_all(session.tile_url_template, session.cookies, zoom=zoom)

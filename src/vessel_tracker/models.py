@@ -19,6 +19,12 @@ def _int(value) -> Optional[int]:
         return None
 
 
+def _str(value) -> Optional[str]:
+    """Return None for missing or blank strings."""
+    s = str(value).strip() if value is not None else None
+    return s if s else None
+
+
 @dataclass
 class Vessel:
     # Identity
@@ -67,12 +73,12 @@ class Vessel:
 
         return cls(
             ship_id=raw["SHIP_ID"],
-            shipname=raw.get("SHIPNAME"),
-            flag=raw.get("FLAG"),
+            shipname=_str(raw.get("SHIPNAME")),
+            flag=_str(raw.get("FLAG")),
             shiptype=_int(raw.get("SHIPTYPE")),
             gt_shiptype=_int(raw.get("GT_SHIPTYPE")),
-            type_name=raw.get("TYPE_NAME"),
-            status_name=raw.get("STATUS_NAME"),
+            type_name=_str(raw.get("TYPE_NAME")),
+            status_name=_str(raw.get("STATUS_NAME")),
             lat=_float(raw.get("LAT")),
             lon=_float(raw.get("LON")),
             speed=speed,
@@ -84,7 +90,7 @@ class Vessel:
             l_fore=_float(raw.get("L_FORE")),
             w_left=_float(raw.get("W_LEFT")),
             dwt=_int(raw.get("DWT")),
-            destination=raw.get("DESTINATION"),
+            destination=_str(raw.get("DESTINATION")),
             elapsed=_int(raw.get("ELAPSED")),
             captured_at=captured_at,
         )

@@ -28,11 +28,15 @@ def _build_template(urls: list[str]) -> str:
     return t
 
 
-async def establish(os_name: str = "MacOS", headless: bool = False) -> Session:
+async def establish(os_name: str = "MacOS") -> Session:
     browser_name, browser_path = BROWSER_EXECUTABLES[os_name]
 
     async with async_playwright() as p:
-        browser = await p[browser_name].launch(executable_path=browser_path, headless=headless)
+        browser = await p[browser_name].launch(
+            executable_path=browser_path,
+            headless=False,
+            args=["--window-position=-32000,-32000"],
+        )
         context = await browser.new_context()
 
         page = await context.new_page()
