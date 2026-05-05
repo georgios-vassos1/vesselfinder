@@ -1,19 +1,18 @@
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
 from tracker.config import BROWSER_EXECUTABLES
 
-_AIS_URL_PATTERN = re.compile(
-    re.escape("/get_data_json_4/z:") + r"\d+/X:\d+/Y:\d+/station:0"
-)
+Cookie = dict[str, Any]
 
 
 @dataclass
 class Session:
-    cookies: list[dict]
+    cookies: list[Cookie]
     tile_url_template: str
     sample_tile_urls: list[str] = field(default_factory=list)
 
@@ -27,7 +26,12 @@ def _build_template(urls: list[str], fallback: str) -> str:
     return t
 
 
-async def establish(os_name: str, url: str, url_pattern: re.Pattern, fallback_template: str) -> Session:
+async def establish(
+    os_name: str,
+    url: str,
+    url_pattern: re.Pattern[str],
+    fallback_template: str,
+) -> Session:
     browser_name, browser_path = BROWSER_EXECUTABLES[os_name]
 
     async with async_playwright() as p:
@@ -37,7 +41,6 @@ async def establish(os_name: str, url: str, url_pattern: re.Pattern, fallback_te
             args=["--window-position=-32000,-32000"],
         )
         context = await browser.new_context()
-
         page = await context.new_page()
         await Stealth().apply_stealth_async(page)
 
