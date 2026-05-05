@@ -8,16 +8,16 @@ down:
 	docker-compose down
 
 logs:
-	docker-compose logs -f scraper
+	docker-compose logs -f marine-scraper aviation-scraper
 
 status:
 	docker-compose ps
 
 build:
-	docker-compose build scraper
+	docker-compose build marine-scraper aviation-scraper
 
 rebuild:
-	docker-compose build --no-cache scraper
+	docker-compose build --no-cache marine-scraper aviation-scraper
 
 clean:
 	docker-compose down -v

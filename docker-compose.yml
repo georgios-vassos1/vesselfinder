@@ -1,3 +1,13 @@
+x-scraper-base: &scraper-base
+  build: .
+  restart: unless-stopped
+  depends_on:
+    timescaledb:
+      condition: service_healthy
+  environment:
+    DATABASE_URL: postgresql://vessel:vessel@timescaledb:5432/vessel_track
+    SCRAPE_INTERVAL_MINUTES: "10"
+
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16
@@ -17,18 +27,18 @@ services:
       retries: 5
       start_period: 20s
 
-  scraper:
-    build: .
-    restart: unless-stopped
-    depends_on:
-      timescaledb:
-        condition: service_healthy
+  marine-scraper:
+    <<: *scraper-base
     environment:
       DATABASE_URL: postgresql://vessel:vessel@timescaledb:5432/vessel_track
       SCRAPE_INTERVAL_MINUTES: "10"
       SCRAPE_OS: Linux
-    volumes:
-      - ./data:/app/data
+    command: >
+      sh -c "Xvfb :99 -screen 0 1280x720x24 -nolisten tcp & sleep 1 && vessel-tracker"
+
+  aviation-scraper:
+    <<: *scraper-base
+    command: aviation-tracker
 
 volumes:
   timescaledb_data:
