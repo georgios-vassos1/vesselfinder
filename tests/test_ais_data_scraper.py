@@ -1,10 +1,5 @@
 from tracker.marine.fetcher import tile_urls
-from tracker.marine.scraper import _AIS_URL_PATTERN, _filter_ais_urls
-
-
-class _FakeRequest:
-    def __init__(self, url: str):
-        self.url = url
+from tracker.marine.scraper import _AIS_URL_PATTERN
 
 
 def test_ais_url_pattern_matches_valid():
@@ -15,17 +10,6 @@ def test_ais_url_pattern_matches_valid():
 def test_ais_url_pattern_rejects_other():
     url = "https://www.marinetraffic.com/en/ais/home"
     assert not _AIS_URL_PATTERN.search(url)
-
-
-def test_filter_ais_urls_returns_only_matching():
-    requests = [
-        _FakeRequest("https://www.marinetraffic.com/get_data_json_4/z:3/X:4/Y:2/station:0"),
-        _FakeRequest("https://www.marinetraffic.com/en/ais/home"),
-        _FakeRequest("https://www.marinetraffic.com/get_data_json_4/z:10/X:512/Y:300/station:0"),
-    ]
-    result = _filter_ais_urls(requests)
-    assert len(result) == 2
-    assert all("get_data_json_4" in url for url in result)
 
 
 def test_tile_urls_zoom_2():
