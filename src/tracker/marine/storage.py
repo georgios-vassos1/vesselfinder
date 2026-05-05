@@ -1,8 +1,9 @@
 import logging
 from typing import Sequence
 
+import psycopg
+
 from tracker.marine.models import Vessel
-from tracker.storage import connect  # noqa: F401 — re-exported for convenience
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ COPY vessel_positions (
 """
 
 
-def ensure_schema(conn) -> None:
+def ensure_schema(conn: psycopg.Connection) -> None:
     with conn.cursor() as cur:
         for stmt in _DDL_STATEMENTS:
             cur.execute(stmt)
@@ -61,7 +62,7 @@ def ensure_schema(conn) -> None:
     log.info("Schema ready")
 
 
-def insert_vessels(conn, vessels: Sequence[Vessel]) -> int:
+def insert_vessels(conn: psycopg.Connection, vessels: Sequence[Vessel]) -> int:
     if not vessels:
         return 0
 

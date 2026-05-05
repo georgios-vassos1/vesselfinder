@@ -1,11 +1,12 @@
 import asyncio
 import logging
 import math
-from datetime import datetime, timezone
 
 from curl_cffi.requests import AsyncSession
 
+from tracker.marine.browser import Cookie
 from tracker.marine.config import REQUEST_HEADERS
+from tracker.marine.models import AISRecord
 
 log = logging.getLogger(__name__)
 
@@ -33,11 +34,11 @@ def tile_urls(template: str, zoom: int) -> list[str]:
     ]
 
 
-def _cookie_header(cookies: list[dict]) -> str:
+def _cookie_header(cookies: list[Cookie]) -> str:
     return "; ".join(f"{c['name']}={c['value']}" for c in cookies)
 
 
-async def _fetch_tile(session: AsyncSession, url: str, headers: dict) -> list[dict]:
+async def _fetch_tile(session: AsyncSession, url: str, headers: dict[str, str]) -> list[AISRecord]:
     try:
         resp = await session.get(url, headers=headers)
         resp.raise_for_status()
@@ -52,14 +53,13 @@ async def _fetch_tile(session: AsyncSession, url: str, headers: dict) -> list[di
 
 async def fetch_all(
     tile_url_template: str,
-    cookies: list[dict],
+    cookies: list[Cookie],
     zoom: int = _DEFAULT_ZOOM,
-) -> list[dict]:
+) -> list[AISRecord]:
     urls = tile_urls(tile_url_template, zoom)
     headers = {**REQUEST_HEADERS, "Cookie": _cookie_header(cookies)}
     semaphore = asyncio.Semaphore(_MAX_CONCURRENT)
-    captured_at = datetime.now(timezone.utc).isoformat()
-    vessels_by_id: dict[str, dict] = {}
+    vessels_by_id: dict[str, AISRecord] = {}
 
     async def bounded_fetch(session: AsyncSession, url: str) -> None:
         async with semaphore:
@@ -67,7 +67,7 @@ async def fetch_all(
             for row in rows:
                 ship_id = row.get("SHIP_ID")
                 if ship_id:
-                    vessels_by_id[ship_id] = {**row, "captured_at": captured_at}
+                    vessels_by_id[ship_id] = row
             await asyncio.sleep(_REQUEST_DELAY)
 
     log.info("Fetching %d tiles at zoom:%d", len(urls), zoom)
