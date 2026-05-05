@@ -16,3 +16,18 @@ def _database_url() -> str:
 
 def connect() -> psycopg.Connection:
     return psycopg.connect(_database_url(), row_factory=dict_row)
+
+
+def get_connection(existing: psycopg.Connection | None) -> psycopg.Connection:
+    """Return a live connection, reconnecting if the existing one has dropped."""
+    if existing is not None:
+        try:
+            existing.execute("SELECT 1")
+            return existing
+        except Exception:
+            log.warning("DB connection lost — reconnecting")
+            try:
+                existing.close()
+            except Exception:
+                pass
+    return connect()
