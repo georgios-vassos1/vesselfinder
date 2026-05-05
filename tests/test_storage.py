@@ -1,15 +1,12 @@
-"""
-Unit tests for the storage layer that do not require a live database.
-"""
-
 import os
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from vessel_tracker.models import Vessel
-from vessel_tracker.storage import _database_url, insert_vessels
+from tracker.marine.models import Vessel
+from tracker.marine.storage import insert_vessels
+from tracker.storage import _database_url
 
 
 def _make_vessel(**kwargs) -> Vessel:
@@ -102,5 +99,5 @@ def test_insert_vessels_row_order():
     insert_vessels(mock_conn, [vessel])
 
     row = mock_copy.write_row.call_args[0][0]
-    assert row[0] == captured_at   # captured_at first — partition key
-    assert row[1] == "42"          # ship_id second
+    assert row[0] == captured_at
+    assert row[1] == "42"

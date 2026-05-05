@@ -1,23 +1,11 @@
-"""
-TimescaleDB storage layer.
-
-Requires DATABASE_URL env var, e.g.:
-    postgresql://vessel:vessel@localhost:5432/vessel_track
-"""
-
 import logging
-import os
 from typing import Sequence
 
-import psycopg
-from psycopg.rows import dict_row
-
-from vessel_tracker.models import Vessel
+from tracker.marine.models import Vessel
+from tracker.storage import connect  # noqa: F401 — re-exported for convenience
 
 log = logging.getLogger(__name__)
 
-# DDL is split into discrete statements — psycopg3 does not support
-# multi-statement queries in a single execute() call.
 _DDL_STATEMENTS = [
     """
     CREATE TABLE IF NOT EXISTS vessel_positions (
@@ -65,22 +53,7 @@ COPY vessel_positions (
 """
 
 
-def _database_url() -> str:
-    url = os.environ.get("DATABASE_URL")
-    if not url:
-        raise RuntimeError("DATABASE_URL environment variable is not set")
-    return url
-
-
-def connect() -> psycopg.Connection:
-    return psycopg.connect(_database_url(), row_factory=dict_row)
-
-
-def ensure_schema(conn: psycopg.Connection) -> None:
-    """Create the hypertable and index if they do not already exist.
-
-    Should be called once at startup, not on every run.
-    """
+def ensure_schema(conn) -> None:
     with conn.cursor() as cur:
         for stmt in _DDL_STATEMENTS:
             cur.execute(stmt)
@@ -88,8 +61,7 @@ def ensure_schema(conn: psycopg.Connection) -> None:
     log.info("Schema ready")
 
 
-def insert_vessels(conn: psycopg.Connection, vessels: Sequence[Vessel]) -> int:
-    """Bulk-insert vessel records using the COPY protocol (fastest for large batches)."""
+def insert_vessels(conn, vessels: Sequence[Vessel]) -> int:
     if not vessels:
         return 0
 
@@ -97,27 +69,11 @@ def insert_vessels(conn: psycopg.Connection, vessels: Sequence[Vessel]) -> int:
         with cur.copy(_COPY_SQL) as copy:
             for v in vessels:
                 copy.write_row((
-                    v.captured_at,
-                    v.ship_id,
-                    v.shipname,
-                    v.flag,
-                    v.shiptype,
-                    v.gt_shiptype,
-                    v.type_name,
-                    v.status_name,
-                    v.lat,
-                    v.lon,
-                    v.speed,
-                    v.course,
-                    v.heading,
-                    v.rot,
-                    v.length,
-                    v.width,
-                    v.l_fore,
-                    v.w_left,
-                    v.dwt,
-                    v.destination,
-                    v.elapsed,
+                    v.captured_at, v.ship_id, v.shipname, v.flag,
+                    v.shiptype, v.gt_shiptype, v.type_name, v.status_name,
+                    v.lat, v.lon, v.speed, v.course, v.heading, v.rot,
+                    v.length, v.width, v.l_fore, v.w_left,
+                    v.dwt, v.destination, v.elapsed,
                 ))
     conn.commit()
     return len(vessels)

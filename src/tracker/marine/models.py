@@ -31,27 +31,27 @@ class Vessel:
     ship_id: str
     shipname: Optional[str]
     flag: Optional[str]
-    shiptype: Optional[int]       # MarineTraffic numeric ship type
-    gt_shiptype: Optional[int]    # Grouped ship type category
+    shiptype: Optional[int]
+    gt_shiptype: Optional[int]
     type_name: Optional[str]
     status_name: Optional[str]
 
     # Position
-    lat: Optional[float]          # degrees
-    lon: Optional[float]          # degrees
+    lat: Optional[float]
+    lon: Optional[float]
 
     # Movement
     speed: Optional[float]        # knots
     course: Optional[float]       # degrees (0–360)
     heading: Optional[float]      # degrees (0–360)
-    rot: Optional[float]          # rate of turn
+    rot: Optional[float]
 
     # Dimensions
     length: Optional[float]       # metres
     width: Optional[float]        # metres
-    l_fore: Optional[float]       # metres, bow to centre
-    w_left: Optional[float]       # metres, port to centre
-    dwt: Optional[int]            # deadweight tonnage
+    l_fore: Optional[float]
+    w_left: Optional[float]
+    dwt: Optional[int]
 
     # Voyage
     destination: Optional[str]

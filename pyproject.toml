@@ -26,10 +26,10 @@ dev = [
 ]
 
 [project.scripts]
-vessel-tracker = "vessel_tracker.runner:main"
+vessel-tracker = "tracker.marine.runner:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/vessel_tracker"]
+packages = ["src/tracker"]
 
 [tool.ruff]
 line-length = 120

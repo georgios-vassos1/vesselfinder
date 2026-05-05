@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 
 import psycopg
 
-from vessel_tracker.ais_data_scraper import client
-from vessel_tracker.models import Vessel
-from vessel_tracker.storage import connect, ensure_schema, insert_vessels
+from tracker.marine.models import Vessel
+from tracker.marine.scraper import client
+from tracker.marine.storage import ensure_schema, insert_vessels
+from tracker.storage import connect
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +22,6 @@ _INTERVAL = int(os.environ.get("SCRAPE_INTERVAL_MINUTES", "10")) * 60
 
 
 def _get_connection(existing: psycopg.Connection | None) -> psycopg.Connection:
-    """Return a live connection, reconnecting if the existing one is broken."""
     if existing is not None:
         try:
             existing.execute("SELECT 1")

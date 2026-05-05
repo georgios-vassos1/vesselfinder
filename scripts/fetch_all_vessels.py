@@ -13,8 +13,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from vessel_tracker.session import establish
-from vessel_tracker.tile_fetcher import _DEFAULT_ZOOM, fetch_all
+from tracker.marine.fetcher import _DEFAULT_ZOOM, fetch_all
+from tracker.marine.scraper import establish_session
 
 _OS = "MacOS"
 _ZOOM = _DEFAULT_ZOOM
@@ -63,7 +63,7 @@ def _coverage_report(vessels: list[dict]) -> dict[str, int]:
 
 async def run() -> None:
     print(f"Establishing session ({_OS}) ...")
-    session = await establish(os_name=_OS)
+    session = await establish_session(os_name=_OS)
     print(f"Session ready — tile template: {session.tile_url_template}")
     print(f"Cookies: {len(session.cookies)}")
 
@@ -93,7 +93,6 @@ async def run() -> None:
     for region, count in _coverage_report(run1).items():
         print(f"  {region:<25} {count:>6,}")
 
-    # Save run 1 as the canonical output
     _OUT_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y.%m.%d-%H.%M")
     out_path = _OUT_DIR / f"vessels_{timestamp}.json"

@@ -1,5 +1,5 @@
-from vessel_tracker.ais_data_scraper import _AIS_URL_PATTERN, _filter_ais_urls
-from vessel_tracker.tile_fetcher import tile_urls
+from tracker.marine.fetcher import tile_urls
+from tracker.marine.scraper import _AIS_URL_PATTERN, _filter_ais_urls
 
 
 class _FakeRequest:
@@ -31,7 +31,6 @@ def test_filter_ais_urls_returns_only_matching():
 def test_tile_urls_zoom_2():
     template = "https://example.com/z:{z}/X:{x}/Y:{y}"
     urls = tile_urls(template, zoom=2)
-    # All 16 tiles pass the lat filter at zoom:2 (Arctic tiles are large, min lat still below 74)
     assert len(urls) == 16
     assert all("z:2" in u for u in urls)
     assert len(set(urls)) == 16
@@ -40,7 +39,6 @@ def test_tile_urls_zoom_2():
 def test_tile_urls_zoom_4():
     template = "https://example.com/z:{z}/X:{x}/Y:{y}"
     urls = tile_urls(template, zoom=4)
-    # 256 total minus ~48 Arctic tiles filtered above 74°N
     assert len(urls) == 208
     assert all("z:4" in u for u in urls)
     assert len(set(urls)) == 208
@@ -49,6 +47,5 @@ def test_tile_urls_zoom_4():
 def test_tile_urls_excludes_arctic():
     template = "https://example.com/z:{z}/X:{x}/Y:{y}"
     urls = tile_urls(template, zoom=4)
-    # Y:0 tiles (lat 82-85°N) should all be excluded
     assert not any("X:0/Y:0" in u for u in urls)
     assert not any("X:8/Y:0" in u for u in urls)

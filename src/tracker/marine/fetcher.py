@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from curl_cffi.requests import AsyncSession
 
-from vessel_tracker.config import REQUEST_HEADERS
+from tracker.marine.config import REQUEST_HEADERS
 
 log = logging.getLogger(__name__)
 

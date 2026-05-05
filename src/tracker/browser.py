@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
-from vessel_tracker.config import BROWSER_EXECUTABLES, MARINETRAFFIC_URL
+from tracker.config import BROWSER_EXECUTABLES
 
 _AIS_URL_PATTERN = re.compile(
     re.escape("/get_data_json_4/z:") + r"\d+/X:\d+/Y:\d+/station:0"
@@ -15,20 +15,19 @@ _AIS_URL_PATTERN = re.compile(
 class Session:
     cookies: list[dict]
     tile_url_template: str
-    # Captured during page load — useful for debugging but not required for fetching
     sample_tile_urls: list[str] = field(default_factory=list)
 
 
-def _build_template(urls: list[str]) -> str:
+def _build_template(urls: list[str], fallback: str) -> str:
     if not urls:
-        return "https://www.marinetraffic.com/getData/get_data_json_4/z:{z}/X:{x}/Y:{y}/station:0"
+        return fallback
     t = re.sub(r"/z:\d+", "/z:{z}", urls[0])
     t = re.sub(r"/X:\d+", "/X:{x}", t)
     t = re.sub(r"/Y:\d+", "/Y:{y}", t)
     return t
 
 
-async def establish(os_name: str = "MacOS") -> Session:
+async def establish(os_name: str, url: str, url_pattern: re.Pattern, fallback_template: str) -> Session:
     browser_name, browser_path = BROWSER_EXECUTABLES[os_name]
 
     async with async_playwright() as p:
@@ -42,17 +41,17 @@ async def establish(os_name: str = "MacOS") -> Session:
         page = await context.new_page()
         await Stealth().apply_stealth_async(page)
 
-        ais_urls: list[str] = []
+        captured_urls: list[str] = []
         page.on(
             "request",
-            lambda req: ais_urls.append(req.url) if _AIS_URL_PATTERN.search(req.url) else None,
+            lambda req: captured_urls.append(req.url) if url_pattern.search(req.url) else None,
         )
 
-        await page.goto(MARINETRAFFIC_URL)
+        await page.goto(url)
         await page.wait_for_timeout(5000)
 
         cookies = await context.cookies()
         await browser.close()
 
-    template = _build_template(ais_urls)
-    return Session(cookies=cookies, tile_url_template=template, sample_tile_urls=ais_urls)
+    template = _build_template(captured_urls, fallback_template)
+    return Session(cookies=cookies, tile_url_template=template, sample_tile_urls=captured_urls)

@@ -33,7 +33,7 @@ install:
 	uv sync --extra dev
 
 lint:
-	uv run ruff check src/ tests/ scripts/
+	uv run ruff check src/tracker/ tests/ scripts/
 
 test:
 	uv run pytest tests/

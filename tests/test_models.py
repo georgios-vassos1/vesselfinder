@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from vessel_tracker.models import Vessel
+from tracker.marine.models import Vessel
 
 _RAW = {
     "SHIP_ID": "7378535",
@@ -43,7 +43,7 @@ def test_from_raw_position():
 
 def test_from_raw_speed_converted_to_knots():
     v = Vessel.from_raw(_RAW)
-    assert v.speed == 17.5  # 175 tenths-of-knot → 17.5 kn
+    assert v.speed == 17.5
 
 
 def test_from_raw_dimensions():

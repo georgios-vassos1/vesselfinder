@@ -2,6 +2,10 @@ MARINETRAFFIC_URL = (
     "https://www.marinetraffic.com/en/ais/home/centerx:22.1/centery:10.0/zoom:2"
 )
 
+FALLBACK_TILE_TEMPLATE = (
+    "https://www.marinetraffic.com/getData/get_data_json_4/z:{z}/X:{x}/Y:{y}/station:0"
+)
+
 REQUEST_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 "
@@ -12,9 +16,4 @@ REQUEST_HEADERS = {
     "Accept-Encoding": "none",
     "Accept-Language": "en-US,en;q=0.8",
     "Connection": "keep-alive",
-}
-
-BROWSER_EXECUTABLES = {
-    "MacOS": ("chromium", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-    "Linux": ("chromium", "/usr/bin/chromium"),
 }
