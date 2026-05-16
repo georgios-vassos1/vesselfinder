@@ -1,4 +1,4 @@
-.PHONY: up down logs status build rebuild clean clean-all dashboard install install-app lint test
+.PHONY: up down logs status build rebuild clean clean-all dashboard opensky install install-app lint test
 
 # --- Docker Compose ---
 up:
@@ -10,14 +10,17 @@ down:
 logs:
 	docker-compose logs -f marine-scraper aviation-scraper
 
+opensky-logs:
+	docker-compose logs -f opensky-scraper
+
 status:
 	docker-compose ps
 
 build:
-	docker-compose build marine-scraper aviation-scraper
+	docker-compose build marine-scraper aviation-scraper opensky-scraper
 
 rebuild:
-	docker-compose build --no-cache marine-scraper aviation-scraper
+	docker-compose build --no-cache marine-scraper aviation-scraper opensky-scraper
 
 clean:
 	docker-compose down -v
@@ -32,6 +35,12 @@ dashboard:
 	@bash -c 'trap "docker-compose down -v && echo DB wiped." EXIT INT TERM; \
 		docker-compose up -d timescaledb aviation-scraper && \
 		uv run streamlit run app/streamlit_app.py'
+
+opensky:
+	@set -a && source .env && set +a && \
+		trap 'docker-compose down -v 2>/dev/null; echo "DB wiped."' EXIT INT TERM && \
+		docker-compose up -d timescaledb opensky-scraper && \
+		uv run streamlit run app/streamlit_opensky.py
 
 # --- Development ---
 install:

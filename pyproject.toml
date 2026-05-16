@@ -30,9 +30,10 @@ app = [
 ]
 
 [project.scripts]
-vessel-tracker    = "tracker.marine.runner:main"
-aviation-tracker  = "tracker.aviation.runner:main"
-aviation-opensky  = "tracker.aviation.opensky:main"
+vessel-tracker        = "tracker.marine.runner:main"
+aviation-tracker      = "tracker.aviation.runner:main"
+aviation-opensky      = "tracker.aviation.opensky:main"
+opensky-tracker       = "tracker.aviation_opensky.runner:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tracker"]
