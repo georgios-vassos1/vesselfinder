@@ -32,9 +32,10 @@ clean-all:
 	docker image prune -f
 
 dashboard:
-	@bash -c 'trap "docker-compose down -v && echo DB wiped." EXIT INT TERM; \
+	@set -a && source .env && set +a && \
+		trap 'docker-compose down -v 2>/dev/null; echo "DB wiped."' EXIT INT TERM && \
 		docker-compose up -d timescaledb aviation-scraper && \
-		uv run streamlit run app/streamlit_app.py'
+		uv run streamlit run app/streamlit_app.py
 
 opensky:
 	@set -a && source .env && set +a && \

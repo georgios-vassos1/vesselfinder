@@ -38,6 +38,14 @@ services:
 
   aviation-scraper:
     <<: *scraper-base
+    environment:
+      DATABASE_URL: postgresql://vessel:vessel@timescaledb:5432/vessel_track
+      SCRAPE_INTERVAL_MINUTES: "10"
+      OPENSKY_DB_PATH: "/data/opensky_db.json"
+      OPENSKY_CLIENT_ID: "${OPENSKY_CLIENT_ID}"
+      OPENSKY_CLIENT_SECRET: "${OPENSKY_CLIENT_SECRET}"
+    volumes:
+      - ./data:/data:ro
     command: aviation-tracker
 
   opensky-scraper:
