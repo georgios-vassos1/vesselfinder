@@ -24,10 +24,15 @@ dev = [
     "polyfactory>=2.16.0",
     "ruff>=0.3.0",
 ]
+app = [
+    "streamlit>=1.35",
+    "pydeck>=0.9",
+]
 
 [project.scripts]
 vessel-tracker   = "tracker.marine.runner:main"
 aviation-tracker = "tracker.aviation.runner:main"
+aviation-sweep   = "tracker.aviation.sweep:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tracker"]
