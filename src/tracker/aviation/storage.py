@@ -1,11 +1,23 @@
 import logging
+from datetime import datetime, timezone
 from typing import Sequence
 
 import psycopg
+from psycopg.rows import dict_row
 
 from tracker.aviation.models import Aircraft
 
 log = logging.getLogger(__name__)
+
+_ENRICHMENT_DDL = """
+CREATE TABLE IF NOT EXISTS aircraft_enrichment (
+    flight_id     TEXT PRIMARY KEY,
+    aircraft_type TEXT,
+    registration  TEXT,
+    icao24        TEXT,
+    enriched_at   TIMESTAMPTZ NOT NULL
+)
+"""
 
 _DDL_STATEMENTS = [
     """
@@ -44,6 +56,13 @@ _DDL_STATEMENTS = [
     CREATE INDEX IF NOT EXISTS aircraft_positions_icao24
         ON aircraft_positions (icao24, captured_at DESC)
     """,
+    """
+    SELECT add_retention_policy(
+        'aircraft_positions',
+        INTERVAL '2 hours',
+        if_not_exists => TRUE
+    )
+    """,
 ]
 
 _COPY_SQL = """
@@ -59,8 +78,47 @@ def ensure_schema(conn: psycopg.Connection) -> None:
     with conn.cursor() as cur:
         for stmt in _DDL_STATEMENTS:
             cur.execute(stmt)
+        cur.execute(_ENRICHMENT_DDL)
     conn.commit()
     log.info("Aviation schema ready")
+
+
+def load_enrichment(
+    conn: psycopg.Connection,
+    flight_ids: list[str],
+) -> dict[str, tuple[str | None, str | None, str | None]]:
+    if not flight_ids:
+        return {}
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            "SELECT flight_id, aircraft_type, registration, icao24"
+            " FROM aircraft_enrichment WHERE flight_id = ANY(%s)",
+            (flight_ids,),
+        )
+        return {
+            row["flight_id"]: (row["aircraft_type"], row["registration"], row["icao24"])
+            for row in cur.fetchall()
+        }
+
+
+def store_enrichment(
+    conn: psycopg.Connection,
+    enrichments: dict[str, tuple[str | None, str | None, str | None]],
+) -> None:
+    if not enrichments:
+        return
+    now = datetime.now(timezone.utc)
+    with conn.cursor() as cur:
+        for flight_id, (at, reg, icao) in enrichments.items():
+            cur.execute(
+                """
+                INSERT INTO aircraft_enrichment (flight_id, aircraft_type, registration, icao24, enriched_at)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (flight_id) DO NOTHING
+                """,
+                (flight_id, at, reg, icao, now),
+            )
+    conn.commit()
 
 
 def insert_aircraft(conn: psycopg.Connection, aircraft: Sequence[Aircraft]) -> int:
