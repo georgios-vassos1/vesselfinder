@@ -11,11 +11,9 @@ log = logging.getLogger(__name__)
 
 _ENRICHMENT_DDL = """
 CREATE TABLE IF NOT EXISTS aircraft_enrichment (
-    flight_id     TEXT PRIMARY KEY,
-    aircraft_type TEXT,
-    registration  TEXT,
-    icao24        TEXT,
-    enriched_at   TIMESTAMPTZ NOT NULL
+    flight_id   TEXT PRIMARY KEY,
+    icao24      TEXT NOT NULL,
+    enriched_at TIMESTAMPTZ NOT NULL
 )
 """
 
@@ -86,37 +84,33 @@ def ensure_schema(conn: psycopg.Connection) -> None:
 def load_enrichment(
     conn: psycopg.Connection,
     flight_ids: list[str],
-) -> dict[str, tuple[str | None, str | None, str | None]]:
+) -> dict[str, str]:
     if not flight_ids:
         return {}
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(
-            "SELECT flight_id, aircraft_type, registration, icao24"
-            " FROM aircraft_enrichment WHERE flight_id = ANY(%s)",
+            "SELECT flight_id, icao24 FROM aircraft_enrichment WHERE flight_id = ANY(%s)",
             (flight_ids,),
         )
-        return {
-            row["flight_id"]: (row["aircraft_type"], row["registration"], row["icao24"])
-            for row in cur.fetchall()
-        }
+        return {row["flight_id"]: row["icao24"] for row in cur.fetchall()}
 
 
 def store_enrichment(
     conn: psycopg.Connection,
-    enrichments: dict[str, tuple[str | None, str | None, str | None]],
+    enrichments: dict[str, str],
 ) -> None:
     if not enrichments:
         return
     now = datetime.now(timezone.utc)
     with conn.cursor() as cur:
-        for flight_id, (at, reg, icao) in enrichments.items():
+        for flight_id, icao24 in enrichments.items():
             cur.execute(
                 """
-                INSERT INTO aircraft_enrichment (flight_id, aircraft_type, registration, icao24, enriched_at)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO aircraft_enrichment (flight_id, icao24, enriched_at)
+                VALUES (%s, %s, %s)
                 ON CONFLICT (flight_id) DO NOTHING
                 """,
-                (flight_id, at, reg, icao, now),
+                (flight_id, icao24, now),
             )
     conn.commit()
 
