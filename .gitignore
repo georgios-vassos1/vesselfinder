@@ -37,3 +37,4 @@ docker-compose.override.yml
 # Data snapshots
 data/mtraf_*
 data/vessels_*
+data/aircraft_db.json
