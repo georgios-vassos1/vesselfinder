@@ -5,20 +5,39 @@ import logging
 import os
 from dataclasses import replace
 from datetime import datetime, timezone
+from pathlib import Path
 
 import psycopg
 
+from tracker.aviation.correlator import correlate
 from tracker.aviation.enricher import enrich_ids
 from tracker.aviation.fetcher import fetch_all
 from tracker.aviation.models import Aircraft
 from tracker.aviation.opensky import load as load_opensky
 from tracker.aviation.storage import ensure_schema, insert_aircraft, load_enrichment, store_enrichment
+from tracker.aviation_opensky.auth import fetch_token
+from tracker.aviation_opensky.fetcher import BoundingBox, fetch_states
 from tracker.storage import connect, get_connection
 
 log = logging.getLogger(__name__)
 
 _INTERVAL = int(os.environ.get("SCRAPE_INTERVAL_MINUTES", "10")) * 60
 _ENRICH_BATCH = int(os.environ.get("ENRICH_BATCH_SIZE", "100"))
+
+_BBOX = BoundingBox(north=85, south=-85, west=-180, east=180)
+_TOKEN_REFRESH = 240
+
+_token_state: dict[str, str | None] = {"token": None}
+
+
+async def _token_loop(client_id: str, client_secret: str) -> None:
+    while True:
+        try:
+            _token_state["token"] = await fetch_token(client_id, client_secret)
+            log.info("OpenSky token refreshed")
+        except Exception:
+            log.exception("Token refresh failed — continuing with existing token")
+        await asyncio.sleep(_TOKEN_REFRESH)
 
 
 async def _scrape_once(
@@ -30,23 +49,37 @@ async def _scrape_once(
     aircraft = [Aircraft.from_proto(r, captured_at) for r in raw]
 
     all_ids = [a.flight_id for a in aircraft if a.flight_id]
-
     known = load_enrichment(conn, all_ids)
 
-    new_ids = [fid for fid in all_ids if fid not in known][:_ENRICH_BATCH]
-    new_enrichments = await enrich_ids(new_ids) if new_ids else {}
+    opensky_states = await fetch_states(_BBOX, token=_token_state.get("token"))
+    correlated = correlate(aircraft, opensky_states)
 
-    if new_enrichments:
-        store_enrichment(conn, {fid: icao for fid, (_, _, icao) in new_enrichments.items() if icao})
-        log.info("Stored %d new icao24 mappings", len(new_enrichments))
+    new_from_correlator = {fid: icao for fid, icao in correlated.items() if fid not in known}
 
-    all_icao24 = {**known, **{fid: icao for fid, (_, _, icao) in new_enrichments.items() if icao}}
+    remaining_ids = [
+        fid for fid in all_ids
+        if fid not in known and fid not in correlated
+    ][:_ENRICH_BATCH]
+    new_enrichments = await enrich_ids(remaining_ids) if remaining_ids else {}
+
+    all_new = {
+        **new_from_correlator,
+        **{fid: icao for fid, (_, _, icao) in new_enrichments.items() if icao},
+    }
+    if all_new:
+        store_enrichment(conn, all_new)
+        log.info(
+            "Stored %d new icao24 mappings (%d from correlator, %d from clickhandler)",
+            len(all_new), len(new_from_correlator), len(new_enrichments),
+        )
+
+    all_icao24 = {**known, **all_new}
 
     def resolve(a: Aircraft) -> Aircraft:
         icao24 = all_icao24.get(a.flight_id)
         if not icao24:
             return a
-        type_, reg = opensky_db.get(icao24, (None, None))
+        type_, reg = opensky_db.get(icao24.upper(), (None, None))
         return replace(a, icao24=icao24, aircraft_type=type_, registration=reg)
 
     return insert_aircraft(conn, [resolve(a) for a in aircraft])
@@ -57,8 +90,15 @@ async def _run_loop() -> None:
 
     conn = connect()
     ensure_schema(conn)
-    opensky_db = load_opensky()
+    db_path = os.environ.get("OPENSKY_DB_PATH")
+    opensky_db = load_opensky(Path(db_path)) if db_path else load_opensky()
     log.info("Loaded %d aircraft from OpenSky DB", len(opensky_db))
+
+    client_id = os.environ.get("OPENSKY_CLIENT_ID")
+    client_secret = os.environ.get("OPENSKY_CLIENT_SECRET")
+    if client_id and client_secret:
+        asyncio.create_task(_token_loop(client_id, client_secret))
+        await asyncio.sleep(2)
 
     try:
         while True:

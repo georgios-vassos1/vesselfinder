@@ -4,9 +4,9 @@ from tracker.aviation.proto import RawAircraftFields
 from tracker.aviation.runner import _scrape_once
 
 
-def _raw(flight_id: int, callsign: str) -> RawAircraftFields:
+def _raw(flight_id: int, callsign: str, lat: float = 51.5, lon: float = -0.1) -> RawAircraftFields:
     return RawAircraftFields(
-        flight_id=flight_id, lat=51.5, lon=-0.1,
+        flight_id=flight_id, lat=lat, lon=lon,
         heading=270, altitude=35000, speed=450,
         last_seen=1234567890, on_ground=False, callsign=callsign,
     )
@@ -36,6 +36,8 @@ async def test_scrape_once_uses_opensky_for_type_when_icao24_known():
 
     with (
         patch("tracker.aviation.runner.fetch_all", new_callable=AsyncMock) as mock_fetch,
+        patch("tracker.aviation.runner.fetch_states", new_callable=AsyncMock, return_value=[]),
+        patch("tracker.aviation.runner.correlate", return_value={}),
         patch("tracker.aviation.runner.enrich_ids", new_callable=AsyncMock),
         patch("tracker.aviation.runner.load_enrichment", return_value={flight_id_hex: "E80451"}),
         patch("tracker.aviation.runner.store_enrichment"),
@@ -57,6 +59,8 @@ async def test_scrape_once_skips_enricher_when_icao24_already_known():
 
     with (
         patch("tracker.aviation.runner.fetch_all", new_callable=AsyncMock) as mock_fetch,
+        patch("tracker.aviation.runner.fetch_states", new_callable=AsyncMock, return_value=[]),
+        patch("tracker.aviation.runner.correlate", return_value={}),
         patch("tracker.aviation.runner.enrich_ids", new_callable=AsyncMock) as mock_enrich,
         patch("tracker.aviation.runner.load_enrichment", return_value={flight_id_hex: "E80451"}),
         patch("tracker.aviation.runner.store_enrichment"),
@@ -68,12 +72,42 @@ async def test_scrape_once_skips_enricher_when_icao24_already_known():
     mock_enrich.assert_not_called()
 
 
-async def test_scrape_once_calls_enricher_for_unknown_flight_ids():
+async def test_scrape_once_uses_correlator_result_before_enricher():
+    flight_id_int = 0xdeadbeef
+    flight_id_hex = format(flight_id_int, "x")
+
+    opensky_db = {"ABC123": ("A320", "F-GKXA")}
+    inserted = []
+
+    def capture_insert(conn, aircraft):
+        inserted.extend(aircraft)
+        return len(aircraft)
+
+    with (
+        patch("tracker.aviation.runner.fetch_all", new_callable=AsyncMock) as mock_fetch,
+        patch("tracker.aviation.runner.fetch_states", new_callable=AsyncMock, return_value=[]),
+        patch("tracker.aviation.runner.correlate", return_value={flight_id_hex: "ABC123"}),
+        patch("tracker.aviation.runner.enrich_ids", new_callable=AsyncMock) as mock_enrich,
+        patch("tracker.aviation.runner.load_enrichment", return_value={}),
+        patch("tracker.aviation.runner.store_enrichment"),
+        patch("tracker.aviation.runner.insert_aircraft", side_effect=capture_insert),
+    ):
+        mock_fetch.return_value = [_raw(flight_id_int, "AFR123")]
+        await _scrape_once(_mock_conn(), opensky_db)
+
+    mock_enrich.assert_not_called()
+    assert inserted[0].icao24 == "ABC123"
+    assert inserted[0].aircraft_type == "A320"
+
+
+async def test_scrape_once_calls_enricher_for_ids_unresolved_by_correlator():
     flight_id_int = 0xdeadbeef
     flight_id_hex = format(flight_id_int, "x")
 
     with (
         patch("tracker.aviation.runner.fetch_all", new_callable=AsyncMock) as mock_fetch,
+        patch("tracker.aviation.runner.fetch_states", new_callable=AsyncMock, return_value=[]),
+        patch("tracker.aviation.runner.correlate", return_value={}),
         patch("tracker.aviation.runner.enrich_ids", new_callable=AsyncMock) as mock_enrich,
         patch("tracker.aviation.runner.load_enrichment", return_value={}),
         patch("tracker.aviation.runner.store_enrichment"),
@@ -98,6 +132,8 @@ async def test_scrape_once_aircraft_without_icao24_gets_no_type():
 
     with (
         patch("tracker.aviation.runner.fetch_all", new_callable=AsyncMock) as mock_fetch,
+        patch("tracker.aviation.runner.fetch_states", new_callable=AsyncMock, return_value=[]),
+        patch("tracker.aviation.runner.correlate", return_value={}),
         patch("tracker.aviation.runner.enrich_ids", new_callable=AsyncMock, return_value={}),
         patch("tracker.aviation.runner.load_enrichment", return_value={}),
         patch("tracker.aviation.runner.store_enrichment"),
