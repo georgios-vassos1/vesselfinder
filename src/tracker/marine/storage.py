@@ -43,6 +43,13 @@ _DDL_STATEMENTS = [
     CREATE INDEX IF NOT EXISTS vessel_positions_ship_id
         ON vessel_positions (ship_id, captured_at DESC)
     """,
+    """
+    SELECT add_retention_policy(
+        'vessel_positions',
+        INTERVAL '2 hours',
+        if_not_exists => TRUE
+    )
+    """,
 ]
 
 _COPY_SQL = """
