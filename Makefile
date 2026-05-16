@@ -1,4 +1,4 @@
-.PHONY: up down logs status build rebuild clean clean-all install lint test
+.PHONY: up down logs status build rebuild clean clean-all dashboard install install-app lint test
 
 # --- Docker Compose ---
 up:
@@ -28,9 +28,17 @@ clean-all:
 	docker rmi vessel_track-scraper timescale/timescaledb:latest-pg16 python:3.12-slim-bookworm 2>/dev/null || true
 	docker image prune -f
 
+dashboard:
+	@bash -c 'trap "docker-compose down -v && echo DB wiped." EXIT INT TERM; \
+		docker-compose up -d timescaledb aviation-scraper && \
+		uv run streamlit run app/streamlit_app.py'
+
 # --- Development ---
 install:
 	uv sync --extra dev
+
+install-app:
+	uv sync --extra dev --extra app
 
 lint:
 	uv run ruff check src/tracker/ tests/ scripts/
