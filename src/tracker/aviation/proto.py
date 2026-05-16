@@ -1,45 +1,21 @@
-"""
-Minimal gRPC-Web encoder/decoder for the FR24 LiveFeed API.
-
-Request proto (LiveFeedRequest):
-  field 1 (message): Bounds { north(1), south(2), west(3), east(4) — float32 each }
-  field 2 (message): Filters (constant — copied from captured browser request)
-  field 6 (varint):  1
-  field 7 (varint):  300
-  field 8 (varint):  14400  (maxage seconds)
-  field 9 (varint):  0
-  field 10 (bytes):  <empty>
-
-Response proto (repeated LiveFeedResponse):
-  field 1 (message): Aircraft {
-    field 1  (varint):  flight_id
-    field 2  (float):   lat
-    field 3  (float):   lon
-    field 4  (varint):  heading (degrees)
-    field 5  (varint):  altitude (feet)
-    field 6  (varint):  speed (knots)
-    field 9  (varint):  last_seen (unix timestamp)
-    field 10 (varint):  on_ground (0/1)
-    field 11 (string):  callsign
-  }
-"""
+from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Iterator, Optional
+from typing import Iterator
 
 
 @dataclass
 class RawAircraftFields:
     flight_id: int = 0
-    lat: Optional[float] = None
-    lon: Optional[float] = None
-    heading: Optional[int] = None
-    altitude: Optional[int] = None
-    speed: Optional[int] = None
-    last_seen: Optional[int] = None
-    on_ground: Optional[bool] = None
-    callsign: Optional[str] = None
+    lat: float | None = None
+    lon: float | None = None
+    heading: int | None = None
+    altitude: int | None = None
+    speed: int | None = None
+    last_seen: int | None = None
+    on_ground: bool | None = None
+    callsign: str | None = None
 
 
 def _varint(value: int) -> bytes:
@@ -97,7 +73,6 @@ def _read_varint(data: bytes, pos: int) -> tuple[int, int]:
 
 
 def decode_response(body: bytes) -> Iterator[RawAircraftFields]:
-    """Yield one RawAircraftFields per aircraft from a gRPC-Web response body."""
     if len(body) < 5:
         return
     msg_len = struct.unpack(">I", body[1:5])[0]

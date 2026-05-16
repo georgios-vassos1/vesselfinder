@@ -65,7 +65,6 @@ def test_from_proto_empty_callsign_becomes_none():
 
 
 def test_from_proto_lookup_fields_absent():
-    """Fields not in live feed should default to None."""
     a = Aircraft.from_proto(_RAW, _CAPTURED_AT)
     assert a.icao24 is None
     assert a.registration is None
